@@ -6,7 +6,7 @@
        xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd http://www.springframework.org/schema/context https://www.springframework.org/schema/context/spring-context.xsd http://www.springframework.org/schema/mvc https://www.springframework.org/schema/mvc/spring-mvc.xsd">
 
     <!--扫描控制层组件-->
-    <context:component-scan base-package="com.Xie.controller"/>
+    <context:component-scan base-package="com.Xie"/>
 
     <!-- 配置Thymeleaf视图解析器 -->
 
@@ -29,9 +29,22 @@
         </property>
     </bean>
 
+    <!--
+        配置默认的servlet处理静态资源
+        当前工程的web.xml配置的前端控制器DispatcherServlet的url-pattern是“/”，
+        tomcat的web.xml配置的DefaultServlet的url-pattern也是/
+        此时，浏览器发送的请求会优先被DispatcherServlet进行处理，但是DispatcherServlet无法处理静态资源
+        若配置了<mvc:default-servlet-handler/>,此时浏览器发送的所有请求都会被DefaultServlet处理
+        若配置了<mvc:default-servlet-handler/>,和<mvc:annotation-driven/>
+        浏览器发送的请求会先被DispatcherServlet进行处理，无法处理再被DefaultServlet进行处理
+    -->
+    <mvc:default-servlet-handler />
+
+
     <!--开启mvc的注解驱动-->
-    <mvc:annotation-driven/>
+    <mvc:annotation-driven />
 
     <!--视图控制器：为当前的请求直接设置视图名称实现页面跳转-->
-    <mvc:view-controller path="/" view-name="index"></mvc:view-controller>
+    <mvc:view-controller path="/" view-name="index"/>
+    <mvc:view-controller path="/to/add" view-name="employee_add"/>
 </beans>

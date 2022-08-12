@@ -1,3 +1,5 @@
+
+
 # Spring-MVC
 Spring-MVC学习
 
@@ -760,3 +762,441 @@ b>当前请求必须传输请求参数_method
 ## 7. RESTful案例
 
 ### 7.1 准备工作
+
+和传统 CRUD 一样，实现对员工信息的增删改查。
+
++ 搭建环境
+
++ 准备实体类
+
+```java
+package com.Xie.pojo;
+
+/**
+ * @Description:
+ * @author: XieFeiYu
+ * @eamil: 32096231@qq.com
+ * @date:2022/8/7 19:36
+ */
+public class Employee {
+    private Integer id;
+    private String lastName;
+    private String email;
+    // 1 male, 0 female
+    private Integer gender;
+
+    public Integer getId() {
+        return id;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
+    }
+
+    public String getLastName() {
+        return lastName;
+    }
+
+    public void setLastName(String lastName) {
+        this.lastName = lastName;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public Integer getGender() {
+        return gender;
+    }
+
+    public void setGender(Integer gender) {
+        this.gender = gender;
+    }
+
+    public Employee() {
+    }
+
+    public Employee(Integer id, String lastName, String email, Integer gender) {
+        this.id = id;
+        this.lastName = lastName;
+        this.email = email;
+        this.gender = gender;
+    }
+}
+```
+
+```java
+package com.Xie.dao;
+
+import com.Xie.pojo.Employee;
+import org.springframework.stereotype.Repository;
+
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+
+/**
+ * @Description:
+ * @author: XieFeiYu
+ * @eamil: 32096231@qq.com
+ * @date:2022/8/7 19:49
+ */
+@Repository
+public class EmployeeDao {
+    private static Map<Integer, Employee> employees = null;
+    static{
+        employees = new HashMap<Integer, Employee>();
+        employees.put( 1001 , new Employee( 1001 , "E-AA", "aa@163.com", 1 ));
+        employees.put( 1002 , new Employee( 1002 , "E-BB", "bb@163.com", 1 ));
+        employees.put( 1003 , new Employee( 1003 , "E-CC", "cc@163.com", 0 ));
+        employees.put( 1004 , new Employee( 1004 , "E-DD", "dd@163.com", 0 ));
+        employees.put( 1005 , new Employee( 1005 , "E-EE", "ee@163.com", 1 ));
+    }
+    private static Integer initId = 1006 ;
+    public void save(Employee employee){
+        if(employee.getId() == null){
+            employee.setId(initId++);
+        }
+        employees.put(employee.getId(), employee);
+    }
+
+        public Collection<Employee> getAll() {
+        return employees.values();
+}
+
+        public Employee get(Integer id){
+        return employees.get(id);
+}
+
+        public void delete(Integer id){
+        employees.remove(id);
+}
+}
+```
+
+---
+
+### 7.2 功能清单
+
+| 功能                | URL 地址    | 请求方式 |
+| ------------------- | ----------- | -------- |
+| 访问首页√           | /           | GET      |
+| 查询全部数据√       | /employee   | GET      |
+| 删除√               | /employee/2 | DELETE   |
+| 跳转到添加数据页面√ | /toAdd      | GET      |
+| 执行保存√           | /employee   | POST     |
+| 跳转到更新数据页面√ | /employee/2 | GET      |
+| 执行更新√           | /employee   | PUT      |
+
+---
+
+### 7.3 具体功能：访问首页
+
+①配置view-controller
+
+```xml
+<mvc:view-controller path="/" view-name="index"/>
+```
+
+②创建页面
+
+```html
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+    <head>
+        <meta charset="UTF-8">
+        <title>首页</title>
+    </head>
+    <body>
+        <h1>index.html</h1>
+        <a th:href="@{/employee}">查询所有的员工信息</a>
+    </body>
+</html>
+```
+
+---
+
+### 7.4 具体功能：查询所有员工数据
+
+①控制器方法
+
+```java
+@RequestMapping(value = "/employee", method = RequestMethod.GET)
+public String getAllEmployee(Model model) {
+    //获取所有的员工信息
+    Collection<Employee> allEmployee = employeeDao.getAll();
+    //将所有的员工信息在请求域中共享
+    model.addAttribute("allEmployee", allEmployee);
+    //跳转到列表页面
+    return "employee_list";
+}
+```
+
+②创建employee_list.html
+
+```html
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+    <head>
+        <meta charset="UTF-8">
+        <title>employee list</title>
+        <link rel="stylesheet" th:href="@{/static/css/index_work.css}">
+    </head>
+    <body>
+            <table >
+                <tr>
+                    <th colspan="5">employee list</th>
+                </tr>
+                <tr>
+                    <th>id</th>
+                    <th>lastName</th>
+                    <th>email</th>
+                    <th>gender</th>
+                    <th>options(<a th:href="@{/to/add}">add</a> )</th>
+                </tr>
+                <tr th:each="employee : ${allEmployee}">
+                    <td th:text="${employee.id}"></td>
+                    <td th:text="${employee.lastName}"></td>
+                    <td th:text="${employee.email}"></td>
+                    <td th:text="${employee.gender}"></td>
+                    <td>
+                        <a th:href="@{'/employee/'+${employee.id}}">delete</a>
+                        <a th:href="@{'/employee/'+${employee.id}}">update</a>
+                    </td>
+                </tr>
+            </table>
+            <form method="post">
+                <input type="hidden" name="_method" value="delete">
+            </form>
+```
+
+---
+
+### 7.5 具体功能：删除
+
+①创建处理delete请求方式的表单
+
+```html
+<form method="post">
+    <input type="hidden" name="_method" value="delete">
+</form>
+```
+
+②删除超链接绑定点击事件
+
++ 引入vue.js
+
+```html
+<script type="text/javascript" th:src="@{/static/js/vue.js}"></script>
+```
+
++ 删除超链接
+
+```html
+<a @click="deleteEmployee()" th:href="@{'/employee/'+${employee.id}}">delete</a>
+```
+
++ 通过vue处理点击事件
+
+```html
+<script type="text/javascript">
+    var vue = new Vue({
+        el:"#app",
+        methods:{
+            deleteEmployee(){
+                //获取form表单
+                var form = document.getElementsByTagName("form")[0];
+                //将超链接的href属性值赋值给form表单的acton属性
+                //event.target表示当前触发事件的标签
+                form.action = event.target.href;
+                //提交表单
+                form.submit();
+                //阻止超链接的默认行为
+                event.preventDefault();
+            }
+        }
+    });
+</script>
+```
+
+③控制器方法
+
+```java
+@RequestMapping(value = "/employee/{id}", method = RequestMethod.DELETE)
+public String deleteEmployee(@PathVariable("id") Integer id) {
+    //根据id删除员工信息
+    employeeDao.delete(id);
+    //重定向到列表功能：/employee
+    return "redirect:/employee";
+}
+```
+
+---
+
+### 7.6 具体功能：跳转到添加数据页面
+
+①配置view-controller
+
+```xml
+<mvc:view-controller path="/to/add" view-name="employee_add"/>
+```
+
+②创建employee_add.html
+
+```html
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+    <head>
+        <meta charset="UTF-8">
+        <title>add employee</title>
+        <link rel="stylesheet" th:href="@{/static/css/index_work.css}">
+    </head>
+    <body>
+        <form th:action = "@{/employee}" method="post">
+            <table>
+                <tr>
+                    <th colspan="2">add employee</th>
+                    </tr>
+                <tr>
+                    <td>lastName</td>
+                    <td><input type="text" name="lastName"></td>
+                </tr>
+                <tr>
+                    <td>email</td>
+                    <td><input type="text" name="email"></td>
+                </tr>
+                <tr>
+                    <td>gender</td>
+                    <td>
+                        <input type="radio" name="gender" value="1">male
+                        <input type="radio" name="gender" value="0">female
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan="2">
+                        <input type="submit" value="add">
+                    </td>
+                </tr>
+                <tr>
+                </tr>
+            </table>
+        </form>
+
+    </body>
+</html>
+```
+
+---
+
+### 7.7 具体功能：执行保存
+
+①控制器方法
+
+```java
+@RequestMapping(value = "/employee", method = RequestMethod.POST)
+public String addEmployee(Employee employee) {
+    //保存员工信息
+    employeeDao.save(employee);
+    //重定向到列表功能：/employee
+    return "redirect:/employee";
+}
+```
+
+---
+
+### 7.8 具体功能：跳转到更新数据页面
+
+①修改超链接
+
+```html
+<a th:href="@{'/employee/'+${employee.id}}">update</a>
+```
+
+②控制器方法
+
+```java
+public String toUpdate(@PathVariable("id") Integer id, Model model) {
+    //根据id查询员工信息
+    Employee employee = employeeDao.get(id);
+    //将员工信息放在请求域中
+    model.addAttribute("employee", employee);
+    //跳转到修改页面employee_update
+    return "employee_update";
+}
+```
+
+③创建employee_update.html
+
+```html
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+    <head>
+        <meta charset="UTF-8">
+        <title>update employee</title>
+        <link rel="stylesheet" th:href="@{/static/css/index_work.css}">
+    </head>
+    <body>
+
+        <form th:action = "@{/employee}" method="post">
+            <input type="hidden" name="_method" value="put">
+            <input type="hidden" name="id" th:value="${employee.id}">
+            <table>
+                <tr>
+                    <th colspan="2">update employee</th>
+                    </tr>
+                <tr>
+                    <td>lastName</td>
+                    <td><input type="text" name="lastName" th:value="${employee.lastName}"></td>
+                </tr>
+                <tr>
+                    <td>email</td>
+                    <td><input type="text" name="email" th:value="${employee.email}"></td>
+                </tr>
+                <tr>
+                    <td>gender</td>
+                    <td>
+                        <input type="radio" name="gender" value="1" th:field="${employee.gender}">male
+                        <input type="radio" name="gender" value="0" th:field="${employee.gender}">female
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan="2">
+                        <input type="submit" value="update">
+                    </td>
+                </tr>
+                <tr>
+                </tr>
+            </table>
+        </form>
+
+    </body>
+</html>
+```
+
+---
+
+### 7.9、具体功能：执行更新
+
+①控制器方法
+
+```java
+@RequestMapping(value = "/employee", method = RequestMethod.PUT)
+public String updateEmployee(Employee employee) {
+    //修改员工信息
+    employeeDao.save(employee);
+    //重定向到列表功能：/employee
+    return "redirect:/employee";
+}
+```
+
+---
+
+## 8. SpringMVC处理ajax请求
+
+### 8.1 @RequestBody
+
+@RequestBody可以获取请求体信息，使用@RequestBody注解标识控制器方法的形参，当前请求的请求体就会为当前注解所标识的形参赋值
