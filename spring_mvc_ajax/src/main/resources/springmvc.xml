@@ -37,4 +37,8 @@
 
     <!--视图控制器：为当前的请求直接设置视图名称实现页面跳转-->
     <mvc:view-controller path="/" view-name="index"/>
+
+    <!--配置文件上传解析器-->
+    <bean id="multipartResolver" class="org.springframework.web.multipart.commons.CommonsMultipartResolver"/>
+
 </beans>

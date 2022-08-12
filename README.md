@@ -1420,3 +1420,101 @@ public User testResponseBodyJson() {
 ### 8.5 @RestController注解
 
 @RestController注解是springMVC提供的一个复合注解，标识在控制器的类上，就相当于为类添加了@Controller注解，并且为其中的每个方法添加了@ResponseBody注解
+
+---
+
+## 9.文件上传和下载
+
+### 9.1 文件下载
+
+ResponseEntity用于控制器方法的返回值类型，该控制器方法的返回值就是响应到浏览器的响应报文使用ResponseEntity实现下载文件的功能
+
+```java
+@RequestMapping("/test/down")
+public ResponseEntity<byte[]>testResponseEntity(HttpSession session)throws IOException {
+    //获取ServletContext对象
+    ServletContext servletContext=session.getServletContext();
+    //获取服务器中文件的真实路径
+    String realPath = servletContext.getRealPath("img");
+    realPath = realPath + File.separator + "demo.png";
+    //创建输入流
+    InputStream is = new FileInputStream(realPath);
+    //创建字节数组,is.available()获取输入流所对应文件字节数
+    byte[] bytes = new byte[is.available()];
+    //将流读到字节数组中
+    is.read(bytes);
+    //创建HttpHeaders对象设置响应头信息
+    MultiValueMap<String,String> headers=new HttpHeaders();
+    //设置要下载方式以及下载文件的名字
+    headers.add("Content-Disposition","attachment;filename=demo.png");
+    //设置响应状态码
+    HttpStatus statusCode= HttpStatus.OK;
+    //创建ResponseEntity对象
+    ResponseEntity<byte[]> responseEntity=new ResponseEntity<>(bytes,headers,statusCode);
+    //关闭输入流
+    is.close();
+    return responseEntity;
+}
+```
+
+---
+
+### 9.2 文件上传
+
+文件上传要求form表单的请求方式必须为post，并且添加属性enctype="multipart/form-data"SpringMVC中将上传的文件封装到MultipartFile对象中，通过此对象可以获取文件相关信息
+
+上传步骤：
+
+①添加依赖：
+
+```xml
+<!-- https://mvnrepository.com/artifact/commons-fileupload/commons-fileupload -->
+<dependency>
+  <groupId>commons-fileupload</groupId>
+  <artifactId>commons-fileupload</artifactId>
+  <version>1.4</version>
+</dependency>
+```
+
+②在SpringMVC的配置文件中添加配置：
+
+```XML
+<!--必须通过文件解析器的解析才能将文件转换为MultipartFile对象-->
+<bean id="multipartResolver" class="org.springframework.web.multipart.commons.CommonsMultipartResolver"/>
+```
+
+③控制器方法：
+
+```JAVA
+    @RequestMapping("/test/up")
+    public String testUp(MultipartFile photo, HttpSession session) throws IOException {
+
+        //获取上传的文件的名称
+        String fileName = photo.getOriginalFilename();
+        //获取上传的文件的后缀名
+        String hzName = fileName.substring(fileName.lastIndexOf("."));
+        //获取uuid
+        String uuid = UUID.randomUUID().toString();
+        //拼接一个新的文件名
+        fileName = uuid + hzName;
+        //获取ServletContext对象
+        ServletContext servletContext = session.getServletContext();
+        //获取当前工程下photo目录的真实路径
+        String photoPath = servletContext.getRealPath("photo");
+        //创建photoPath所对应的File对象
+        File file = new File(photoPath);
+        //判断photoPath所对应的File对象是否存在
+        if (!file.exists()) {
+            //如果不存在，则创建photoPath所对应的File对象
+            file.mkdirs();
+        }
+        String finalPath = photoPath + File.separator + fileName;
+        //将上传的文件保存到服务器的photo目录下
+        photo.transferTo(new File(finalPath));
+        return "success";
+    }
+```
+
+---
+
+## 10.拦截器
