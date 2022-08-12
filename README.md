@@ -1200,3 +1200,106 @@ public String updateEmployee(Employee employee) {
 ### 8.1 @RequestBody
 
 @RequestBody可以获取请求体信息，使用@RequestBody注解标识控制器方法的形参，当前请求的请求体就会为当前注解所标识的形参赋值
+
+```html
+<div id="app">
+            <h1>index.html</h1>
+            <input type="button" value="测试SpringMVC处理ajax" @click="testAjax()"><br/>
+        </div>
+<script type="text/javascript">
+            var vue = new Vue({
+                el:"#app",
+                methods:{
+                    testAjax(){
+                        axios.post(
+                                "/spring_mvc_ajax/test/ajax?id=1001",
+                                {username:"admin", password:"123456"}
+                        ).then(Response=>{
+                            console.log(Response.data)
+                        });
+                    }
+                }
+            });
+        </script>
+```
+
+```java
+@RequestMapping(value = "/test/ajax")
+public void testAjax(Integer id, @RequestBody String requestBody, HttpServletResponse response) throws IOException {
+
+    System.out.println("requestBody = " + requestBody);
+    System.out.println("id:"+id);
+    response.getWriter().write("hello,axios");
+}
+```
+
+---
+
+### 8.2 @RequestBody获取json格式的请求参数
+
+> 在使用了axios发送ajax请求之后，浏览器发送到服务器的请求参数有两种格式：
+>
+> 1. name=value&name=value...，此时的请求参数可以通过request.getParameter()获取，对应SpringMVC中，可以直接通过控制器方法的形参获取此类请求参数
+>
+> 2. {key:value,key:value,...}，此时无法通过request.getParameter()获取，之前我们使用操作json的相关jar包gson或jackson处理此类请求参数，可以将其转换为指定的实体类对象或map集合。在SpringMVC中，直接使用@RequestBody注解标识控制器方法的形参即可将此类请求参数转换为java对象
+
+使用@RequestBody获取json格式的请求参数的条件：
+
+1. 导入jackson的依赖
+
+```xml
+<!--jackson-->
+<dependency>
+  <groupId>com.fasterxml.jackson.core</groupId>
+  <artifactId>jackson-databind</artifactId>
+  <version>2.13.3</version>
+</dependency>
+```
+
+2. SpringMVC的配置文件中设置开启mvc的注解驱动
+
+```xml
+<mvc:annotation-driven/>
+```
+
+3. 在控制器方法的形参位置，设置json格式的请求参数要转换成的java类型（实体类或map）的参数，并使用@RequestBody注解标识
+
+```html
+<input type="button" value="使用@RequestBody注解处理json格式的请求参数" @click="testRequestBody()">
+```
+
+```html
+<script type="text/javascript" th:src="@{/static/js/vue.js}"></script>
+<script type="text/javascript" th:src="@{/static/js/axios.min.js}"></script>
+<script type="text/javascript">
+    var vue = new Vue({
+        el:"#app",
+        methods:{
+            testRequestBody(){
+                axios.post(
+                        "/spring_mvc_ajax/test/RequestBody/json",
+                        {username:"admin", password:"123456", age:23, gender:"男"}
+                ).then(Response=>{
+                    console.log(Response.data)
+                });
+            }
+        }
+    });
+</script>
+```
+
+```java
+//将json转换为map集合
+@RequestMapping("/test/RequestBody/json")
+public void testRequestBody(@RequestBody Map<String, Object> map, HttpServletResponse response) throws IOException {
+    System.out.println(map);
+    response.getWriter().write("hello,RequestBody");
+}
+
+//将json转换为实体类对象
+@RequestMapping("/test/RequestBody/json")
+public void testRequestBody(@RequestBody User user, HttpServletResponse response) throws IOException {
+    System.out.println(user);
+    response.getWriter().write("hello,RequestBody");
+}
+```
