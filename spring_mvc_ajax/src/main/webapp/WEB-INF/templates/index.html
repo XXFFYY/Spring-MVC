@@ -9,6 +9,8 @@
             <h1>index.html</h1>
             <input type="button" value="测试SpringMVC处理ajax" @click="testAjax()"><br/>
             <input type="button" value="使用@RequestBody注解处理json格式的请求参数" @click="testRequestBody()"><br/>
+            <a th:href="@{/test/ResponseBody}">测试@ResponseBody注解响应浏览器数据</a><br/>
+            <input type="button" value="测试@ResponseBody注解响应json格式的数据" @click="testResponseBody()"><br/>
 
         </div>
 
@@ -51,7 +53,12 @@
                         ).then(Response=>{
                             console.log(Response.data)
                         });
-                    }
+                    },
+                    testResponseBody(){
+                        axios.post("/spring_mvc_ajax/test/ResponseBody/json").then(Response=>{
+                            console.log(Response.data)
+                        });
+                    },
                 }
             });
         </script>

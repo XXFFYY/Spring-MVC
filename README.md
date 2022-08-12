@@ -1303,3 +1303,120 @@ public void testRequestBody(@RequestBody User user, HttpServletResponse response
     response.getWriter().write("hello,RequestBody");
 }
 ```
+
+---
+
+### 8.3 @ResponseBody
+
+@ResponseBody用于标识一个控制器方法，可以将该方法的返回值直接作为响应报文的响应体响应到浏览器
+
+```java
+@RequestMapping("/test/ResponseBody")
+public String testResponseBody() {
+	//此时会跳转到逻辑视图success所对应的页面
+    return "success";
+}
+```
+
+```java
+@RequestMapping("/test/ResponseBody")
+@ResponseBody
+public String testResponseBody() {
+    //此时响应浏览器数据success
+    return "success";
+}
+```
+
+---
+
+### 8.4 @ResponseBody响应浏览器json数据
+
+服务器处理ajax请求之后，大多数情况都需要向浏览器响应一个java对象，此时必须将java对象转换为json字符串才可以响应到浏览器，之前我们使用操作json数据的jar包gson或jackson将java对象转换为json字符串。在SpringMVC中，我们可以直接使用@ResponseBody注解实现此功能
+
+@ResponseBody响应浏览器json数据的条件：
+
+1. 导入jackson的依赖
+
+```xml
+<!--jackson-->
+<dependency>
+  <groupId>com.fasterxml.jackson.core</groupId>
+  <artifactId>jackson-databind</artifactId>
+  <version>2.13.3</version>
+</dependency>
+```
+
+2. SpringMVC的配置文件中设置开启mvc的注解驱动
+
+```xml
+<mvc:annotation-driven/>
+```
+
+3. 使用@ResponseBody注解标识控制器方法，在方法中，将需要转换为json字符串并响应到浏览器的java对象作为控制器方法的返回值，此时SpringMVC就可以将此对象直接转换为json字符串并响应到浏览器
+
+```html
+<input type="button" value="测试@ResponseBody注解响应json格式的数据" @click="testResponseBody()"><br/>
+```
+
+```html
+<script type="text/javascript" th:src="@{/static/js/vue.js}"></script>
+<script type="text/javascript" th:src="@{/static/js/axios.min.js}"></script>
+<script type="text/javascript">
+    var vue = new Vue({
+        el:"#app",
+        methods:{
+            
+            testResponseBody(){
+                axios.post("/spring_mvc_ajax/test/ResponseBody/json").then(Response=>{
+                    console.log(Response.data)
+                });
+            },
+        }
+    });
+</script>
+```
+
+```java
+//响应浏览器list集合
+@RequestMapping("/test/ResponseBody/json")
+@ResponseBody
+public List<User> testResponseBodyJson() {
+    User user1 = new User(1001, "admin1", "123456", 20, "男");
+    User user2 = new User(1002, "admin2", "123456", 20, "男");
+    User user3 = new User(1003, "admin3", "123456", 20, "男");
+    List<User> list = Arrays.asList(user1, user2, user3);
+    return list;
+}
+```
+
+```java
+//响应浏览器map集合
+@RequestMapping("/test/ResponseBody/json")
+@ResponseBody
+public Map<String, Object> testResponseBodyJson() {
+    User user1 = new User(1001, "admin1", "123456", 20, "男");
+    User user2 = new User(1002, "admin2", "123456", 20, "男");
+    User user3 = new User(1003, "admin3", "123456", 20, "男");
+    Map<String, Object> map = new HashMap<>();
+    map.put("1001", user1);
+    map.put("1002", user2);
+    map.put("1003", user3);
+    return map;
+}
+```
+
+```java
+//响应浏览器实体类对象
+@RequestMapping("/test/ResponseBody/json")
+@ResponseBody
+public User testResponseBodyJson() {
+    User user = new User(1001, "admin", "123456", 20, "男");
+    return user;
+}
+```
+
+---
+
+### 8.5 @RestController注解
+
+@RestController注解是springMVC提供的一个复合注解，标识在控制器的类上，就相当于为类添加了@Controller注解，并且为其中的每个方法添加了@ResponseBody注解
