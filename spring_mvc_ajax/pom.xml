@@ -5,11 +5,11 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>com.Xie</groupId>
-  <artifactId>SpringMVC</artifactId>
+  <artifactId>spring_mvc_ajax</artifactId>
   <version>1.0-SNAPSHOT</version>
   <packaging>war</packaging>
 
-  <name>SpringMVC Maven Webapp</name>
+  <name>spring_mvc_ajax Maven Webapp</name>
   <!-- FIXME change it to the project's website -->
   <url>http://www.example.com</url>
 

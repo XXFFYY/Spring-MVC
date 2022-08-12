@@ -1518,3 +1518,58 @@ public ResponseEntity<byte[]>testResponseEntity(HttpSession session)throws IOExc
 ---
 
 ## 10.拦截器
+
+### 10.1 拦截器的配置
+
+SpringMVC中的拦截器用于拦截控制器方法的执行
+
+SpringMVC中的拦截器需要实现HandlerInterceptor
+
+SpringMVC的拦截器必须在SpringMVC的配置文件中进行配置：
+
+```xml
+    <!--拦截器-->
+    <mvc:interceptors>
+        <!--bean和ref标签配置的拦截器默认对DispatcherServlet处理的所有请求进行拦截-->
+        <!--<bean class="com.Xie.interceptor.FirstInterceptor"/>-->
+        <!--<ref bean="firstInterceptor"/>-->
+        <mvc:interceptor>
+            <!--配置需要拦截的请求路径，/**表示所有请求-->
+            <mvc:mapping path="/*"/>
+            <!--配置需要排除拦截的请求的请求路径-->
+            <mvc:exclude-mapping path="/abc"/>
+            <!--配置拦截器-->
+            <ref bean="firstInterceptor"/>
+        </mvc:interceptor>
+    </mvc:interceptors>
+```
+
+---
+
+### 10.2 拦截器的三个抽象方法
+
+SpringMVC中的拦截器有三个抽象方法：
+
+preHandle：控制器方法执行之前执行preHandle()，其boolean类型的返回值表示是否拦截或放行，返回true为放行，即调用控制器方法；返回false表示拦截，即不调用控制器方法
+
+postHandle：控制器方法执行之后执行postHandle()
+
+afterCompletion：处理完视图和模型数据，渲染视图完毕之后执行afterCompletion()
+
+---
+
+### 10.3 多个拦截器的执行顺序
+
+① 若每个拦截器的preHandle()都返回true
+
+此时多个拦截器的执行顺序和拦截器在SpringMVC的配置文件的配置顺序有关：
+
+preHandle()会按照配置的顺序执行，而postHandle()和afterCompletion()会按照配置的反序执行
+
+② 若某个拦截器的preHandle()返回了false
+
+preHandle()返回false和它之前的拦截器的preHandle()都会执行，postHandle()都不执行，返回false 的拦截器之前的拦截器的afterCompletion()会执行
+
+---
+
+## 11.异常处理器
