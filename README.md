@@ -1623,3 +1623,131 @@ public class ExceptionController {
 使用配置类和注解代替web.xml和SpringMVC配置文件的功能
 
 ### 12.1 创建初始化类，代替web.xml
+
+在Servlet3.0环境中，容器会在类路径中查找实现javax.servlet.ServletContainerInitializer接口的类，如果找到的话就用它来配置Servlet容器。
+
+Spring提供了这个接口的实现，名为SpringServletContainerInitializer，这个类反过来又会查找实现WebApplicationInitializer的类并将配置的任务交给它们来完成。Spring3.2引入了一个便利的WebApplicationInitializer基础实现，名为AbstractAnnotationConfigDispatcherServletInitializer，当我们的类扩展了AbstractAnnotationConfigDispatcherServletInitializer并将其部署到Servlet3.0容器的时候，容器会自动发现它，并用它来配置Servlet上下文。
+
+```java
+public class WebInit extends AbstractAnnotationConfigDispatcherServletInitializer {
+    @Override
+    //设置一个配置类代替spring的配置文件
+    protected Class<?>[] getRootConfigClasses() {
+        return new Class[]{SpringConfig.class};
+    }
+
+    @Override
+    //设置一个配置类代替SpringMVC的配置文件
+    protected Class<?>[] getServletConfigClasses() {
+        return new Class[]{WebConfig.class};
+    }
+
+    @Override
+    //设置SpringMVC的前端控制器DispatcherServlet的url-pattern
+    protected String[] getServletMappings() {
+        return new String[]{"/"};
+    }
+
+    @Override
+    //设置当前的过滤器
+    protected Filter[] getServletFilters() {
+        //创建编码过滤器
+        CharacterEncodingFilter characterEncodingFilter = new CharacterEncodingFilter();
+        characterEncodingFilter.setEncoding("UTF-8");
+        characterEncodingFilter.setForceEncoding(true);
+        //创建处理请求方式的过滤器
+        HiddenHttpMethodFilter hiddenHttpMethodFilter = new HiddenHttpMethodFilter();
+        return new Filter[]{characterEncodingFilter, hiddenHttpMethodFilter};
+    }
+}
+```
+
+---
+
+### 12.2 创建SpringConfig配置类，代替Spring的配置文件
+
+```java
+@Configuration
+public class SpringConfig {
+	//ssm整合之后，spring的配置信息写在此类中}
+}
+```
+
+---
+
+### 12.3 创建WebConfig配置类，代替SpringMVC的配置文件
+
+```java
+@Configuration
+// 扫描组件
+@ComponentScan("com.Xie.controller")
+// 开启mvc注解驱动
+@EnableWebMvc
+public class WebConfig implements WebMvcConfigurer {
+
+    @Override
+    // 配置默认的servlet处理静态资源
+    public void configureDefaultServletHandling(DefaultServletHandlerConfigurer configurer) {
+        configurer.enable();
+    }
+
+    @Override
+    // 配置视图控制器
+    public void addViewControllers(ViewControllerRegistry registry) {
+        registry.addViewController("/").setViewName("index");
+    }
+
+    //@Bean标识的方法的返回值作为bean进行管理，bean的id为方法的名称
+    @Bean
+    public CommonsMultipartResolver multipartResolver() {
+        return new CommonsMultipartResolver();
+    }
+
+    // 配置拦截器
+    @Override
+    public void addInterceptors(InterceptorRegistry registry) {
+        registry.addInterceptor(new FirstInterceptor()).addPathPatterns("/**");
+    }
+
+    // 配置异常解析器
+    @Override
+    public void configureHandlerExceptionResolvers(List<HandlerExceptionResolver> resolvers) {
+        SimpleMappingExceptionResolver exceptionResolver = new SimpleMappingExceptionResolver();
+        Properties prop = new Properties();
+        prop.put(ArithmeticException.class.getName(), "error");
+        exceptionResolver.setExceptionAttribute("ex");
+        resolvers.add(exceptionResolver);
+    }
+
+    // 配置生成模板解析器
+    @Bean
+    public ITemplateResolver templateResolver() {
+        WebApplicationContext webApplicationContext = ContextLoader.getCurrentWebApplicationContext();
+        // ServletContextTemplateResolver需要一个ServletContext作为构造参数，可通过WebApplicationContext的方法获得
+        ServletContextTemplateResolver templateResolver = new ServletContextTemplateResolver(
+                webApplicationContext.getServletContext());
+        templateResolver.setPrefix("/WEB-INF/templates/");
+        templateResolver.setSuffix(".html");
+        templateResolver.setCharacterEncoding("UTF-8");
+        templateResolver.setTemplateMode(TemplateMode.HTML);
+        return templateResolver;
+    }
+
+    // 生成模板引擎并为模板引擎注入模板解析器
+    @Bean
+    public SpringTemplateEngine templateEngine(ITemplateResolver templateResolver) {
+        SpringTemplateEngine templateEngine = new SpringTemplateEngine();
+        templateEngine.setTemplateResolver(templateResolver);
+        return templateEngine;
+    }
+
+    // 生成视图解析器并未解析器注入模板引擎
+    @Bean
+    public ViewResolver viewResolver(SpringTemplateEngine templateEngine) {
+        ThymeleafViewResolver viewResolver = new ThymeleafViewResolver();
+        viewResolver.setCharacterEncoding("UTF-8");
+        viewResolver.setTemplateEngine(templateEngine);
+        return viewResolver;
+    }
+}
+```
