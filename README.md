@@ -1573,3 +1573,53 @@ preHandle()返回false和它之前的拦截器的preHandle()都会执行，postH
 ---
 
 ## 11.异常处理器
+
+### 11.1 基于配置的异常处理
+
+SpringMVC提供了一个处理控制器方法执行过程中所出现的异常的接口：HandlerExceptionResolver 
+
+HandlerExceptionResolver接口的实现类有：DefaultHandlerExceptionResolver和
+
+SimpleMappingExceptionResolver
+
+SpringMVC提供了自定义的异常处理器SimpleMappingExceptionResolver，使用方式：
+
+```xml
+<!--异常解析器-->
+<bean class="org.springframework.web.servlet.handler.SimpleMappingExceptionResolver">
+    <property name="exceptionMappings">
+        <props>
+            <!--key设置要处理的异常，value设置出现该异常时要跳转的页面所对应的逻辑视图-->
+            <prop key="java.lang.ArithmeticException">error</prop>
+        </props>
+    </property>
+    <!--设置共享在请求域中的异常信息的属性名-->
+    <property name="exceptionAttribute" value="ex"/>
+</bean>
+```
+
+---
+
+### 11.2 基于注解的异常处理
+
+```java
+//将当前类标识位异常处理的组件
+@ControllerAdvice
+public class ExceptionController {
+	//设置要处理的异常信息
+    @ExceptionHandler(value = ArithmeticException.class)
+    public String handleException(Throwable ex, Model model){
+        //ex表示控制器方法所处闲的异常
+        model.addAttribute("ex",ex);
+        return "error";
+    }
+}
+```
+
+---
+
+## 12.注解配置SpringMVC
+
+使用配置类和注解代替web.xml和SpringMVC配置文件的功能
+
+### 12.1 创建初始化类，代替web.xml
